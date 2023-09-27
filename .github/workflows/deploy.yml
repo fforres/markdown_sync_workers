@@ -1,0 +1,33 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ["Lint and Typecheck"]
+    branches: [main]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    # Reenable this when we figure out the deployment process
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    name: Deploy to Cloudflare Workers — STAGING
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⏳ Cloning repo
+        uses: actions/checkout@v3
+      - name: ⬢ Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: 📦 Download Cached Package Dependencies
+        uses: actions/cache@v3
+        env:
+          cache-name: NPM
+        with:
+          path: ~/.npm
+          key: CACHE-${{ env.cache-name }}-${{ hashFiles('package-lock.json') }}
+      - name: 📥 Install dependencies
+        run: npm ci --prefer-offline --no-audit --legacy-peer-deps --cache ~/.npm
+      - name: 🛳️ DEPLOY Cloudflare Workers
+        run: CLOUDFLARE_API_TOKEN=${{ secrets.CLOUDFLARE_WORKERS_DEPLOY_KEY }} npx wrangler deploy
