@@ -35,13 +35,17 @@ export class MarkdownDurableObject {
         if (session.quit) {
           webSocket.close(1011, "WebSocket broken.");
         }
+        console.log("handshake", handshake);
         if (!handshake) {
           webSocket.send(JSON.stringify({ ready: true }));
           handshake = true;
           return;
         }
+        console.log("msg.data", msg.data);
         let data = JSON.parse(msg.data.toString());
         this.env.MARKDOWN_KV.put(`_FILE_${data.fileId}`, data.content);
+
+        console.log(`_FILE_${data.fileId}`, data.content);
       } catch (err) {
         console.error(err);
         webSocket.send(JSON.stringify({ error: (err as Error).stack }));
